@@ -1,0 +1,59 @@
+.Kategoriebox {
+  width: min(260px, 85vw);
+  background-color: #2c3e50;
+  color: white;
+  padding: 20px;
+
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+
+  display: none;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+
+  overflow-y: auto;
+  z-index: 4;
+}
+
+.boxsteuerung:checked ~ .Kategoriebox {
+  display: flex;
+}
+
+.boxsteuerung {
+  display: none;
+}
+
+.AufbewahrungsboxC {
+  position: fixed;
+  top: 5px;
+  left: clamp(280px, 22vw, 310px);
+  right: clamp(20px, 4vw, 40px);
+
+  min-height: 80px;
+  background-color: rgba(255, 255, 255, 0.18);
+  z-index: 4;
+}
+
+.KategorieB {
+  width: 120px;
+  min-height: 50px;
+  background-color: #3498db;
+  color: white;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 5px;
+  transition: background-color 0.2s;
+
+  position: fixed;
+  left: clamp(290px, 28vw, 410px);
+  top: 20px;
+  z-index: 5;
+}

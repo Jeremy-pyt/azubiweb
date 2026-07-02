@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="azubi.css">
+    <link rel="stylesheet" href="Kategorie.css">
+    <link rel="stylesheet" href="Erstellen.css">
+    <link rel="stylesheet" href="index.html"
+
+</head>
+
+<body>      
+    <div class="auto">
+        <div class="optik" ></div>
+        <div class="optik b" ></div>
+        <input type="checkbox" id="quadrat-oeffnen" class="boxsteuerung">
+        <input type="checkbox" id="quadrat-oeffnenB" class="boxsteuerungB">
+    
+        <div class="Auflistungsviereck">
+            <div class="Aufbewahrungsbox"></div>
+            <div class="beitrag-liste" id="beitragListe"></div>
+        </div>
+        <label for="quadrat-oeffnenB" class="Erstellen">Erstellen</label>
+    
+            <div class="KategorieboxB">
+                <div class="AufbewahrungsboxB"></div>
+                <div class="Ueberschrift-zeile">
+                    <input type="text" class="Ueberschrift-text" placeholder="Überschrift">
+                    <select class="Kategorie-auswahl" aria-label="Kategorie auswählen">
+                        <option value="Deutsch">Deutsch</option>
+                        <option value="Englisch">Englisch</option>
+                        <option value="Wiso">Wiso</option>
+                        <option value="LF1">LF1</option>
+                        <option value="LF2">LF2</option>
+                        <option value="LF3">LF3</option>
+                        <option value="LF4">LF4</option>
+                    </select>
+                    <input type="text" class="eigene-kategorie" list="kategorienListe" placeholder="eigene Kategorie">
+                    <datalist id="kategorienListe"></datalist>
+                </div>
+                <label for="quadrat-oeffnenB" class="schließen-option">schließen</label>
+                <textarea class="schreiben" placeholder="..."></textarea>
+                <label class="datei-upload">
+                    <span>Datei hochladen</span>
+                    <input type="file" id="dateiUpload" accept="image/*,.txt,.pdf,.doc,.docx" hidden>
+                </label>
+                <div class="datei-vorschau" id="dateiVorschau"></div>
+                <button type="button" class="speichern-button" id="speichernBeitrag">Speichern</button>
+            </div>
+    
+        <label for="quadrat-oeffnen" class="Kategorie">Kategorie</label>
+        
+        <select class="KategorieB" id="filterKategorie" aria-label="Kategorie filtern">
+            <option value="Alle">Alle</option>
+            <option value="Deutsch">Deutsch</option>
+            <option value="Englisch">Englisch</option>
+            <option value="Wiso">Wiso</option>
+            <option value="LF1">LF1</option>
+            <option value="LF2">LF2</option>
+            <option value="LF3">LF3</option>
+            <option value="LF4">LF4</option>
+        </select>
+
+
+    </div>
+    <script>
+            const storageKey = 'azubiBeitraege';
+        const kategorieStorageKey = 'azubiKategorien';
+        const standardKategorien = ['Deutsch', 'Englisch', 'Wiso', 'LF1', 'LF2', 'LF3', 'LF4'];
+        const beitragListe = document.getElementById('beitragListe');
+        const filterKategorie = document.getElementById('filterKategorie');
+        const titelInput = document.querySelector('.Ueberschrift-text');
+        const kategorieSelect = document.querySelector('.Kategorie-auswahl');
+        const eigeneKategorieInput = document.querySelector('.eigene-kategorie');
+        const kategorienListe = document.getElementById('kategorienListe');
+        const textInput = document.querySelector('.schreiben');
+        const dateiUpload = document.getElementById('dateiUpload');
+        const dateiVorschau = document.getElementById('dateiVorschau');
+        const speichernButton = document.getElementById('speichernBeitrag');
+        const offenCheckbox = document.getElementById('quadrat-oeffnenB');
+        let hochgeladeneDatei = null;
+
+        function escapeHtml(value) {
+            return value
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function ladeBeitraege() {
+            try {
+                return JSON.parse(localStorage.getItem(storageKey)) || [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function speichereBeitraege(beitraege) {
+            localStorage.setItem(storageKey, JSON.stringify(beitraege));
+        }
+
+        function ladeGespeicherteKategorien() {
+            try {
+                return JSON.parse(localStorage.getItem(kategorieStorageKey)) || [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function speichereGespeicherteKategorien(kategorien) {
+            localStorage.setItem(kategorieStorageKey, JSON.stringify(kategorien));
+        }
+
+        function getAlleKategorien() {
+            const beitraege = ladeBeitraege();
+            const gespeicherteKategorien = ladeGespeicherteKategorien();
+            const kategorien = new Set([...standardKategorien, ...gespeicherteKategorien]);
+
+            beitraege.forEach((beitrag) => {
+                if (beitrag.kategorie) {
+                    kategorien.add(beitrag.kategorie);
+                }
+            });
+
+            return Array.from(kategorien);
+        }
+
+        function sicherheitKategorieListeAktualisieren() {
+            const gespeicherteKategorien = ladeGespeicherteKategorien();
+            const alleKategorien = getAlleKategorien();
+
+            const neueKategorien = alleKategorien.filter((name) => !standardKategorien.includes(name));
+            const aktualisierteListe = [...standardKategorien, ...neueKategorien];
+
+            if (JSON.stringify(aktualisierteListe) !== JSON.stringify(gespeicherteKategorien)) {
+                speichereGespeicherteKategorien(aktualisierteListe);
+            }
+        }
+
+        function aktualisiereKategorieOptionen() {
+            const kategorien = getAlleKategorien();
+            const gewählteKategorie = kategorieSelect.value;
+
+            kategorieSelect.innerHTML = '';
+            kategorien.forEach((kategorie) => {
+                kategorieSelect.appendChild(new Option(kategorie, kategorie));
+            });
+
+            if (gewählteKategorie && kategorien.includes(gewählteKategorie)) {
+                kategorieSelect.value = gewählteKategorie;
+            } else {
+                kategorieSelect.value = standardKategorien[0];
+            }
+
+            kategorienListe.innerHTML = kategorien
+                .map((kategorie) => `<option value="${escapeHtml(kategorie)}"></option>`)
+                .join('');
+        }
+
+        function aktualisiereFilterOptionen() {
+            const kategorien = getAlleKategorien();
+            const ausgewählteKategorie = filterKategorie.value;
+
+            filterKategorie.innerHTML = '<option value="Alle">Alle</option>';
+            kategorien.forEach((kategorie) => {
+                filterKategorie.appendChild(new Option(kategorie, kategorie));
+            });
+
+            if (ausgewählteKategorie && kategorien.includes(ausgewählteKategorie)) {
+                filterKategorie.value = ausgewählteKategorie;
+            } else {
+                filterKategorie.value = 'Alle';
+            }
+        }
+
+        function dateiZuDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function renderBeitraege() {
+            aktualisiereKategorieOptionen();
+            aktualisiereFilterOptionen();
+
+            const beitraege = ladeBeitraege();
+            const ausgewählteKategorie = filterKategorie.value;
+            const gefilterteBeitraege = ausgewählteKategorie === 'Alle'
+                ? beitraege
+                : beitraege.filter((beitrag) => beitrag.kategorie === ausgewählteKategorie);
+
+            beitragListe.innerHTML = gefilterteBeitraege.map((beitrag) => `
+                <div class="beitrag-card" data-id="${beitrag.id}">
+                    <div class="beitrag-head">
+                        <button type="button" class="beitrag-button" data-id="${beitrag.id}">
+                            <span class="beitrag-thema">${escapeHtml(beitrag.titel)}</span>
+                            <span class="beitrag-kategorie">${escapeHtml(beitrag.kategorie)}</span>
+                        </button>
+                        <button type="button" class="beitrag-loeschen" data-id="${beitrag.id}" aria-label="Beitrag löschen">✕</button>
+                    </div>
+                    <div class="beitrag-text" hidden>${escapeHtml(beitrag.text)}</div>
+                    ${beitrag.datei ? (beitrag.datei.startsWith('data:image') ? `<img class="beitrag-bild" src="${beitrag.datei}" alt="Hochgeladene Datei" hidden>` : `<a class="beitrag-datei" href="${beitrag.datei}" download hidden>${escapeHtml(beitrag.dateiname || 'Datei')}</a>`) : ''}
+                </div>
+            `).join('');
+        }
+
+        dateiUpload.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                hochgeladeneDatei = null;
+                dateiVorschau.innerHTML = '';
+                return;
+            }
+
+            try {
+                const dataUrl = await dateiZuDataUrl(file);
+                hochgeladeneDatei = {
+                    datei: dataUrl,
+                    dateiname: file.name,
+                    typ: file.type
+                };
+
+                if (file.type.startsWith('image/')) {
+                    dateiVorschau.innerHTML = `<img class="mini-bild" src="${dataUrl}" alt="Vorschau">`;
+                } else {
+                    dateiVorschau.innerHTML = `<span class="mini-datei">${escapeHtml(file.name)}</span>`;
+                }
+            } catch (error) {
+                hochgeladeneDatei = null;
+                dateiVorschau.innerHTML = '<span class="mini-datei">Fehler beim Laden</span>';
+            }
+        });
+
+        speichernButton.addEventListener('click', async () => {
+            const titel = titelInput.value.trim();
+            const eigeneKategorie = eigeneKategorieInput.value.trim();
+            const kategorie = eigeneKategorie || kategorieSelect.value || 'Keine Kategorie';
+            const text = textInput.value.trim();
+
+            if (!titel && !text && !hochgeladeneDatei) {
+                return;
+            }
+
+            const gespeicherteKategorien = ladeGespeicherteKategorien();
+            if (eigeneKategorie && !gespeicherteKategorien.includes(eigeneKategorie)) {
+                gespeicherteKategorien.push(eigeneKategorie);
+                speichereGespeicherteKategorien(gespeicherteKategorien);
+            }
+
+            sicherheitKategorieListeAktualisieren();
+
+            const beitraege = ladeBeitraege();
+            beitraege.unshift({
+                id: Date.now(),
+                titel: titel || 'Ohne Überschrift',
+                kategorie: kategorie,
+                text: text || 'Kein Text vorhanden.',
+                datei: hochgeladeneDatei?.datei || '',
+                dateiname: hochgeladeneDatei?.dateiname || ''
+            });
+
+            speichereBeitraege(beitraege);
+            renderBeitraege();
+
+            titelInput.value = '';
+            eigeneKategorieInput.value = '';
+            kategorieSelect.value = standardKategorien[0];
+            textInput.value = '';
+            dateiUpload.value = '';
+            dateiVorschau.innerHTML = '';
+            hochgeladeneDatei = null;
+            offenCheckbox.checked = false;
+        });
+
+        filterKategorie.addEventListener('change', renderBeitraege);
+
+        beitragListe.addEventListener('click', (event) => {
+            const loeschenButton = event.target.closest('.beitrag-loeschen');
+            if (loeschenButton) {
+                const id = Number(loeschenButton.dataset.id);
+                const beitraege = ladeBeitraege().filter((beitrag) => beitrag.id !== id);
+                speichereBeitraege(beitraege);
+                renderBeitraege();
+                return;
+            }
+
+            const button = event.target.closest('.beitrag-button');
+            if (!button) {
+                return;
+            }
+
+            const card = button.closest('.beitrag-card');
+            const textContainer = card.querySelector('.beitrag-text');
+            const isOpen = card.classList.contains('offen');
+
+            card.classList.toggle('offen', !isOpen);
+            textContainer.hidden = isOpen;
+        });
+
+        renderBeitraege();
+    </script>
+</body>
+
+
